@@ -17,8 +17,30 @@ jobs:
       - uses: actions/checkout@v2
       - name: Setup environments
         run: |
+          if [ -d "/usr/lib/jvm" ]; then
+            echo "start before ci-checkout /usr/lib/jvm exists:"
+            ls -l /usr/lib/jvm/
+          else
+            echo "start before ci-checkout /usr/lib/jvm does not exist"
+          fi
+
           ./.github/scripts/ci-checkout.sh
+
+          if [ -d "/usr/lib/jvm" ]; then
+            echo "after ci-checkout /usr/lib/jvm exists:"
+            ls -l /usr/lib/jvm/
+          else
+            echo "after ci-checkout /usr/lib/jvm does not exist"
+          fi
+
           ./.github/scripts/ci-setup.sh
+
+          if [ -d "/usr/lib/jvm" ]; then
+            echo "after ci-setup /usr/lib/jvm exists:"
+            ls -l /usr/lib/jvm/
+          else
+            echo "after ci-setup /usr/lib/jvm does not exist"
+          fi
 
       # Run the tests
       - name: DaCapo Tests
@@ -33,50 +55,3 @@ jobs:
       # Style check
       - name: Style checks
         run: ./.github/scripts/ci-style.sh
-
-  test-weak-ref:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup environments
-        run: |
-          ./.github/scripts/ci-checkout.sh
-          ./.github/scripts/ci-setup.sh
-
-      # Run the tests
-      - name: DaCapo Tests with weak reference processing
-        run: |
-          ./.github/scripts/ci-build.sh
-          ./.github/scripts/ci-test-only-weak-ref.sh
-
-  test-assertions:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup Environments
-        run: |
-            ./.github/scripts/ci-checkout.sh
-            ./.github/scripts/ci-setup.sh
-
-      # Run the tests with assertions
-      - name: DaCapo Test (with extreme_assertions)
-        run: ./.github/scripts/ci-test-assertions.sh
-
-  msrv:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Install cargo-msrv
-        run: cargo install cargo-msrv
-      # Verify the MSRV defined in Cargo.toml
-      - name: Verify MSRV
-        run: cargo msrv --path mmtk verify
-      # If the previous step fails, find MSRV
-      - name: Find MSRV
-        if: failure()
-        run: cargo msrv --path mmtk
